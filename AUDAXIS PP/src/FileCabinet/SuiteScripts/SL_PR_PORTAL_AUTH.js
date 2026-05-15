@@ -19,9 +19,7 @@ define(
     getCurrentPortalUser, createSession, revokeSession
   } = lib;
 
-  // Initialized inside onRequest — N/runtime is unavailable during define callback.
-  let PORTAL_SCRIPTID = '';
-  let PORTAL_DEPLOYID = '';
+  const PORTAL_SCRIPTID = 'customscript_sl_pr_portal_create_v2';
 
   // ============================================================
   // URL / REDIRECT HELPERS
@@ -406,7 +404,7 @@ define(
 
   function renderHome(response, firstName) {
     const homeUrl    = url.resolveScript({ scriptId: runtime.getCurrentScript().id, deploymentId: runtime.getCurrentScript().deploymentId, params: { route: 'home'    }, returnExternalUrl: true });
-    const createUrl  = url.resolveScript(Object.assign({ scriptId: PORTAL_SCRIPTID, params: {}, returnExternalUrl: true }, PORTAL_DEPLOYID ? { deploymentId: PORTAL_DEPLOYID } : {}));
+    const createUrl  = url.resolveScript({ scriptId: PORTAL_SCRIPTID, params: {}, returnExternalUrl: true });
     const logoutUrl  = url.resolveScript({ scriptId: runtime.getCurrentScript().id, deploymentId: runtime.getCurrentScript().deploymentId, params: { route: 'logout'  }, returnExternalUrl: true });
     const myposUrl   = url.resolveScript({ scriptId: runtime.getCurrentScript().id, deploymentId: runtime.getCurrentScript().deploymentId, params: { route: 'mypos'   }, returnExternalUrl: true });
     const approveUrl = url.resolveScript({ scriptId: runtime.getCurrentScript().id, deploymentId: runtime.getCurrentScript().deploymentId, params: { route: 'approve' }, returnExternalUrl: true });
@@ -631,7 +629,7 @@ define(
 
   function renderApprovePage(response, rows, notice, errorMsg) {
     const homeUrl    = url.resolveScript({ scriptId: runtime.getCurrentScript().id, deploymentId: runtime.getCurrentScript().deploymentId, params: { route: 'home'    }, returnExternalUrl: true });
-    const createUrl  = url.resolveScript(Object.assign({ scriptId: PORTAL_SCRIPTID, params: {}, returnExternalUrl: true }, PORTAL_DEPLOYID ? { deploymentId: PORTAL_DEPLOYID } : {}));
+    const createUrl  = url.resolveScript({ scriptId: PORTAL_SCRIPTID, params: {}, returnExternalUrl: true });
     const logoutUrl  = url.resolveScript({ scriptId: runtime.getCurrentScript().id, deploymentId: runtime.getCurrentScript().deploymentId, params: { route: 'logout'  }, returnExternalUrl: true });
     const myposUrl   = url.resolveScript({ scriptId: runtime.getCurrentScript().id, deploymentId: runtime.getCurrentScript().deploymentId, params: { route: 'mypos'   }, returnExternalUrl: true });
     const approveUrl = url.resolveScript({ scriptId: runtime.getCurrentScript().id, deploymentId: runtime.getCurrentScript().deploymentId, params: { route: 'approve' }, returnExternalUrl: true });
@@ -1012,7 +1010,7 @@ define(
   function renderPoDetail(response, poId, employeeId, notice, errorMsg, ctx) {
     ctx = ctx || 'approve';
     const homeUrl    = url.resolveScript({ scriptId: runtime.getCurrentScript().id, deploymentId: runtime.getCurrentScript().deploymentId, params: { route: 'home'    }, returnExternalUrl: true });
-    const createUrl  = url.resolveScript(Object.assign({ scriptId: PORTAL_SCRIPTID, params: {}, returnExternalUrl: true }, PORTAL_DEPLOYID ? { deploymentId: PORTAL_DEPLOYID } : {}));
+    const createUrl  = url.resolveScript({ scriptId: PORTAL_SCRIPTID, params: {}, returnExternalUrl: true });
     const logoutUrl  = url.resolveScript({ scriptId: runtime.getCurrentScript().id, deploymentId: runtime.getCurrentScript().deploymentId, params: { route: 'logout'  }, returnExternalUrl: true });
     const myposUrl   = url.resolveScript({ scriptId: runtime.getCurrentScript().id, deploymentId: runtime.getCurrentScript().deploymentId, params: { route: 'mypos'   }, returnExternalUrl: true });
     const approveUrl = url.resolveScript({ scriptId: runtime.getCurrentScript().id, deploymentId: runtime.getCurrentScript().deploymentId, params: { route: 'approve' }, returnExternalUrl: true });
@@ -1292,7 +1290,7 @@ define(
 
   function renderMyPosList(response, rows, notice, errorMsg) {
     const homeUrl    = url.resolveScript({ scriptId: runtime.getCurrentScript().id, deploymentId: runtime.getCurrentScript().deploymentId, params: { route: 'home'    }, returnExternalUrl: true });
-    const createUrl  = url.resolveScript(Object.assign({ scriptId: PORTAL_SCRIPTID, params: {}, returnExternalUrl: true }, PORTAL_DEPLOYID ? { deploymentId: PORTAL_DEPLOYID } : {}));
+    const createUrl  = url.resolveScript({ scriptId: PORTAL_SCRIPTID, params: {}, returnExternalUrl: true });
     const logoutUrl  = url.resolveScript({ scriptId: runtime.getCurrentScript().id, deploymentId: runtime.getCurrentScript().deploymentId, params: { route: 'logout'  }, returnExternalUrl: true });
     const myposUrl   = url.resolveScript({ scriptId: runtime.getCurrentScript().id, deploymentId: runtime.getCurrentScript().deploymentId, params: { route: 'mypos'   }, returnExternalUrl: true });
     const approveUrl = url.resolveScript({ scriptId: runtime.getCurrentScript().id, deploymentId: runtime.getCurrentScript().deploymentId, params: { route: 'approve' }, returnExternalUrl: true });
@@ -1438,9 +1436,6 @@ define(
   // ENTRYPOINT
   // ============================================================
   function onRequest(context) {
-    PORTAL_SCRIPTID = String(getParam('custscript_pr_auth_create_scriptid', 'customscript_sl_pr_portal_create_v2'));
-    PORTAL_DEPLOYID = String(getParam('custscript_pr_auth_create_deployid', ''));
-
     const route = (context.request.parameters.route || 'login').toLowerCase();
     try {
       if (route === 'login')   return handleLogin(context);

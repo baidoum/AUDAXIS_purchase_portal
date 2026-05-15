@@ -9,12 +9,11 @@
  * - Submit payload as JSON in hidden input "payload"
  *
  * IMPORTANT
- * 1) Set THIS_SUITELET_SCRIPTID / DEPLOYID to your script/deploy IDs
- * 2) AUTH_SUITELET_SCRIPTID / DEPLOYID must point to SL_PR_PORTAL_AUTH
+ * Set AUTH_SUITELET_SCRIPTID to the script ID of SL_PR_PORTAL_AUTH in your account.
  */
 define(
-  ['./LIB_PR_PORTAL_SESSION', './LIB_PR_PORTAL_THEME', 'N/record', 'N/search', 'N/log', 'N/url'],
-  (lib, theme, record, search, log, url) => {
+  ['./LIB_PR_PORTAL_SESSION', './LIB_PR_PORTAL_THEME', 'N/record', 'N/search', 'N/log', 'N/url', 'N/runtime'],
+  (lib, theme, record, search, log, url, runtime) => {
 
   const {
     REC_PORTAL_USER,
@@ -23,11 +22,7 @@ define(
     getCurrentPortalUser  // FIX #4 + #9: active-user check included
   } = lib;
 
-  // Initialized inside onRequest — N/runtime is unavailable during define callback.
-  let THIS_SUITELET_SCRIPTID = '';
-  let THIS_SUITELET_DEPLOYID = '';
-  let AUTH_SUITELET_SCRIPTID = '';
-  let AUTH_SUITELET_DEPLOYID = '';
+  const AUTH_SUITELET_SCRIPTID = 'customscript_sl_pr_portal_auth';
 
   // Initialized inside onRequest — N/runtime is unavailable during define callback.
   let PORTAL_VENDOR_ID       = '';
@@ -38,18 +33,22 @@ define(
   // ============================================================
   // URL HELPERS
   // ============================================================
-  function resolveUrl(scriptId, deployId, params, external) {
-    const opts = { scriptId, params: params || {}, returnExternalUrl: !!external };
-    if (deployId) opts.deploymentId = deployId;
-    return url.resolveScript(opts);
-  }
-
   function selfUrl(params, external) {
-    return resolveUrl(THIS_SUITELET_SCRIPTID, THIS_SUITELET_DEPLOYID, params, external);
+    const s = runtime.getCurrentScript();
+    return url.resolveScript({
+      scriptId:          s.id,
+      deploymentId:      s.deploymentId,
+      params:            params || {},
+      returnExternalUrl: !!external
+    });
   }
 
   function authUrl(params, external) {
-    return resolveUrl(AUTH_SUITELET_SCRIPTID, AUTH_SUITELET_DEPLOYID, params, external);
+    return url.resolveScript({
+      scriptId:          AUTH_SUITELET_SCRIPTID,
+      params:            params || {},
+      returnExternalUrl: !!external
+    });
   }
 
   function renderRedirect(response, targetUrl, message) {
@@ -709,10 +708,6 @@ define(
   // ENTRYPOINT
   // ============================================================
   function onRequest(context) {
-    THIS_SUITELET_SCRIPTID = String(getParam('custscript_pr_create_self_scriptid', 'customscript_sl_pr_portal_create_v2'));
-    THIS_SUITELET_DEPLOYID = String(getParam('custscript_pr_create_self_deployid', ''));
-    AUTH_SUITELET_SCRIPTID = String(getParam('custscript_pr_create_auth_scriptid', 'customscript_sl_pr_portal_auth'));
-    AUTH_SUITELET_DEPLOYID = String(getParam('custscript_pr_create_auth_deployid', ''));
     PORTAL_VENDOR_ID       = String(getParam('custscript_pr_portal_vendor_id',     ''));
     PORTAL_GENERIC_ITEM_ID = String(getParam('custscript_pr_portal_item_id',       ''));
     PORTAL_PO_FORM_ID      = String(getParam('custscript_pr_portal_po_form',       ''));
