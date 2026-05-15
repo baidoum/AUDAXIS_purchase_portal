@@ -38,22 +38,18 @@ define(
   // ============================================================
   // URL HELPERS
   // ============================================================
+  function resolveUrl(scriptId, deployId, params, external) {
+    const opts = { scriptId, params: params || {}, returnExternalUrl: !!external };
+    if (deployId) opts.deploymentId = deployId;
+    return url.resolveScript(opts);
+  }
+
   function selfUrl(params, external) {
-    return url.resolveScript({
-      scriptId:     THIS_SUITELET_SCRIPTID,
-      deploymentId: THIS_SUITELET_DEPLOYID,
-      params:       params || {},
-      returnExternalUrl: !!external
-    });
+    return resolveUrl(THIS_SUITELET_SCRIPTID, THIS_SUITELET_DEPLOYID, params, external);
   }
 
   function authUrl(params, external) {
-    return url.resolveScript({
-      scriptId:     AUTH_SUITELET_SCRIPTID,
-      deploymentId: AUTH_SUITELET_DEPLOYID,
-      params:       params || {},
-      returnExternalUrl: !!external
-    });
+    return resolveUrl(AUTH_SUITELET_SCRIPTID, AUTH_SUITELET_DEPLOYID, params, external);
   }
 
   function renderRedirect(response, targetUrl, message) {
