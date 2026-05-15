@@ -12,8 +12,8 @@
  * Set AUTH_SUITELET_SCRIPTID to the script ID of SL_PR_PORTAL_AUTH in your account.
  */
 define(
-  ['./LIB_PR_PORTAL_SESSION', './LIB_PR_PORTAL_THEME', 'N/record', 'N/search', 'N/log', 'N/url', 'N/runtime'],
-  (lib, theme, record, search, log, url, runtime) => {
+  ['./LIB_PR_PORTAL_SESSION', './LIB_PR_PORTAL_THEME', 'N/record', 'N/search', 'N/log', 'N/url'],
+  (lib, theme, record, search, log, url) => {
 
   const {
     REC_PORTAL_USER,
@@ -22,7 +22,10 @@ define(
     getCurrentPortalUser  // FIX #4 + #9: active-user check included
   } = lib;
 
+  const THIS_SUITELET_SCRIPTID = 'customscript_sl_pr_portal_create_v2';
+  const THIS_SUITELET_DEPLOYID = 'customdeploy_sl_pr_portal_create_v2';
   const AUTH_SUITELET_SCRIPTID = 'customscript_sl_pr_portal_auth';
+  const AUTH_SUITELET_DEPLOYID = 'customdeploy_sl_pr_portal_auth';
 
   // Initialized inside onRequest — N/runtime is unavailable during define callback.
   let PORTAL_VENDOR_ID       = '';
@@ -34,19 +37,19 @@ define(
   // URL HELPERS
   // ============================================================
   function selfUrl(params, external) {
-    const s = runtime.getCurrentScript();
     return url.resolveScript({
-      scriptId:          s.id,
-      deploymentId:      s.deploymentId,
-      params:            params || {},
+      scriptId:     THIS_SUITELET_SCRIPTID,
+      deploymentId: THIS_SUITELET_DEPLOYID,
+      params:       params || {},
       returnExternalUrl: !!external
     });
   }
 
   function authUrl(params, external) {
     return url.resolveScript({
-      scriptId:          AUTH_SUITELET_SCRIPTID,
-      params:            params || {},
+      scriptId:     AUTH_SUITELET_SCRIPTID,
+      deploymentId: AUTH_SUITELET_DEPLOYID,
+      params:       params || {},
       returnExternalUrl: !!external
     });
   }
