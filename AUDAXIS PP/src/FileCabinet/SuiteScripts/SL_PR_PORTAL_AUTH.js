@@ -882,8 +882,9 @@ define(
       currency:  tv('currency'),
       total:     parseFloat(po.getValue({ fieldId: 'total' }) || '0') || 0,
       memo:      String(po.getValue({ fieldId: 'memo' }) || ''),
-      employee:  tv('employee'),
-      employeeId: String(po.getValue({ fieldId: 'employee' }) || '')
+      employee:       tv('employee'),
+      employeeId:     String(po.getValue({ fieldId: 'employee'     }) || ''),
+      nextApproverId: String(po.getValue({ fieldId: 'nextapprover' }) || '')
     };
 
     // Approval status (standard NetSuite field)
@@ -961,16 +962,9 @@ define(
       return renderApprovePage(response, rows, null, 'Impossible de charger la demande : ' + (e.message || e));
     }
 
-    // Determine which step the current user can approve (if any)
-    let userStep = 0;
-    for (let n = 1; n <= 6; n++) {
-      const s = data.steps[n - 1];
-      if (s.approverId === String(employeeId) && !s.approved) {
-        let prevOk = true;
-        for (let j = 0; j < n - 1; j++) { if (!data.steps[j].approved) { prevOk = false; break; } }
-        if (prevOk) { userStep = n; break; }
-      }
-    }
+    // Determine if the current user can approve this PO
+    const canApprove = data.steps[0] && !data.steps[0].approved &&
+      (!data.header.nextApproverId || data.header.nextApproverId === String(employeeId));
 
     const alertHtml = errorMsg
       ? `<div class="alert error" style="display:block;">${escapeHtml(errorMsg)}</div>`
@@ -1039,12 +1033,11 @@ define(
       </tr>`;
     }).join('');
 
-    const actionHtml = (ctx === 'approve' && userStep > 0)
-      ? `<form method="POST" action="${escapeHtml(approveUrl)}" onsubmit="return confirm('Approuver la demande ${escapeHtml(data.header.tranid || data.header.id)} à l\\'étape ${userStep} ?');" style="display:inline;">
+    const actionHtml = (ctx === 'approve' && canApprove)
+      ? `<form method="POST" action="${escapeHtml(approveUrl)}" onsubmit="return confirm('Approve request ${escapeHtml(data.header.tranid || data.header.id)}?');" style="display:inline;">
            <input type="hidden" name="route" value="approve" />
            <input type="hidden" name="poid"  value="${escapeHtml(data.header.id)}" />
-           <input type="hidden" name="step"  value="${userStep}" />
-           <button type="submit" class="btn primary">Approuver l'étape ${userStep}</button>
+           <button type="submit" class="btn primary">Approve</button>
          </form>`
       : (ctx === 'mypos'
         ? `<span class="pill" style="background:#f3f4f6;color:var(--muted);">Vue en lecture seule</span>`
