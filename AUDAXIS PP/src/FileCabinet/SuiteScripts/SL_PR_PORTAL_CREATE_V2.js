@@ -19,7 +19,7 @@ define(
   const {
     REC_PORTAL_USER,
     F_EMPLOYEE, F_IS_ACTIVE,
-    escapeHtml,
+    escapeHtml, getParam,
     getCurrentPortalUser  // FIX #4 + #9: active-user check included
   } = lib;
 
@@ -31,12 +31,10 @@ define(
   const AUTH_SUITELET_SCRIPTID = 'customscript_sl_pr_portal_auth';
   const AUTH_SUITELET_DEPLOYID = 'customdeploy_sl_pr_portal_auth';
 
-  // Hardcoded vendor used for all portal purchase requests.
-  const PORTAL_VENDOR_ID = '1223';
-
-  // Hardcoded generic item used on every portal PO line. The actual product
-  // is described in free text on the line's `description` field.
-  const PORTAL_GENERIC_ITEM_ID = '20149';
+  const PORTAL_VENDOR_ID       = String(getParam('custscript_pr_portal_vendor_id',  ''));
+  const PORTAL_GENERIC_ITEM_ID = String(getParam('custscript_pr_portal_item_id',    ''));
+  const PORTAL_PO_FORM_ID      = String(getParam('custscript_pr_portal_po_form',    ''));
+  const PORTAL_CURRENCY_ID     = String(getParam('custscript_pr_portal_currency_id','1'));
 
   // ============================================================
   // URL HELPERS
@@ -279,7 +277,7 @@ define(
     const po = record.create({
       type: record.Type.PURCHASE_ORDER,
       isDynamic: true,
-      defaultValues: { customform: 111 }
+      defaultValues: PORTAL_PO_FORM_ID ? { customform: PORTAL_PO_FORM_ID } : {}
     });
 
     if (empMeta.subsidiary) {
@@ -533,7 +531,7 @@ define(
   const CLASSES    = ${JSON.stringify(classes)};
   const DEPTS      = ${JSON.stringify(departments)};
   const CURRENCIES = ${JSON.stringify(currencies)};
-  const DEFAULT_CURRENCY_ID = '1';
+  const DEFAULT_CURRENCY_ID = '${PORTAL_CURRENCY_ID}';
 
   function qs(sel){ return document.querySelector(sel); }
   function qsa(sel){ return Array.from(document.querySelectorAll(sel)); }
