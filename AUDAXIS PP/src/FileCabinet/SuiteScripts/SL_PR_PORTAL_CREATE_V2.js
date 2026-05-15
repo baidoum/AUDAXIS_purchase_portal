@@ -187,23 +187,13 @@ define(
         type: 'classification',
         filters: [['isinactive', 'is', 'F']],
         columns: [
-          search.createColumn({ name: 'name', sort: search.Sort.ASC }),
-          search.createColumn({ name: 'custrecordck_customrec_codeana_pays'    }),
-          search.createColumn({ name: 'custrecord1'                            }),
-          search.createColumn({ name: 'custrecordck_customrec_codeana_projet'  })
+          search.createColumn({ name: 'name', sort: search.Sort.ASC })
         ]
       });
-      return (s.run().getRange({ start: 0, end: 200 }) || []).map(r => {
-        const tv = (fieldId) =>
-          String(r.getText({ name: fieldId }) || r.getValue({ name: fieldId }) || '');
-        return {
-          id:       String(r.id),
-          name:     String(r.getValue({ name: 'name' }) || ''),
-          pays:     tv('custrecordck_customrec_codeana_pays'),
-          bailleur: tv('custrecord1'),
-          project:  tv('custrecordck_customrec_codeana_projet')
-        };
-      });
+      return (s.run().getRange({ start: 0, end: 200 }) || []).map(r => ({
+        id:   String(r.id),
+        name: String(r.getValue({ name: 'name' }) || '')
+      }));
     } catch (e) { log.error('getAllClasses', e); return []; }
   }
 
@@ -298,30 +288,6 @@ define(
       ? String(trandateVal.getFullYear()) + pad2(trandateVal.getMonth() + 1) + pad2(trandateVal.getDate())
       : '';
 
-    // Cache pays lookups per class to avoid repeated server calls when several
-    // lines share the same class.
-    const paysCache = {};
-    const paysForClass = (classId) => {
-      if (!classId) return '';
-      if (Object.prototype.hasOwnProperty.call(paysCache, classId)) return paysCache[classId];
-      let pays = '';
-      try {
-        const r = search.lookupFields({
-          type: 'classification',
-          id: classId,
-          columns: ['custrecordck_customrec_codeana_pays']
-        });
-        const v = r && r.custrecordck_customrec_codeana_pays;
-        if (Array.isArray(v)) {
-          if (v.length && v[0]) pays = String(v[0].text || v[0].value || '');
-        } else {
-          pays = String(v || '');
-        }
-      } catch (e) { log.error('paysForClass ' + classId, e); }
-      paysCache[classId] = pays;
-      return pays;
-    };
-
     let added = 0;
     for (let i = 0; i < lines.length; i++) {
       const ln          = lines[i] || {};
@@ -376,9 +342,7 @@ define(
       for (let i = 0; i < lineCount; i++) {
         try {
           po2.selectLine({ sublistId: 'item', line: i });
-          const classId = String(po2.getCurrentSublistValue({ sublistId: 'item', fieldId: 'class' }) || '');
-          const paysCode = paysForClass(classId);
-          const segValue = finalTranid + '-' + paysCode + '-' + ymd + '-' + String(i + 1);
+          const segValue = finalTranid + '-' + ymd + '-' + String(i + 1);
 
           const segRec = record.create({ type: 'customrecord_cseg_cde_dda_id' });
           segRec.setValue({ fieldId: 'name', value: segValue });
@@ -494,9 +458,6 @@ define(
                 <th style="width:12%;">Description<div class="th-en">Description</div></th>
                 <th style="width:4%;">Qté<div class="th-en">Qty</div></th>
                 <th style="width:9%;">Classe<div class="th-en">Class</div></th>
-                <th style="width:6%;">Pays<div class="th-en">Country</div></th>
-                <th style="width:7%;">Bailleur<div class="th-en">Donor</div></th>
-                <th style="width:7%;">Projet<div class="th-en">Project</div></th>
                 <th style="width:7%;" class="right"><span id="rateHeader">Prix (devise)</span><div class="th-en">Rate (currency)</div></th>
                 <th style="width:7%;" class="right">Prix (EUR)<div class="th-en">Rate (EUR)</div></th>
                 <th style="width:10%;" class="right">Total (EUR)<div class="th-en">Total (EUR)</div></th>
@@ -627,9 +588,6 @@ define(
         <input class="input classInput" placeholder="— Classe —" autocomplete="off" />
         <input type="hidden" class="classId" />
       </td>
-      <td><input class="input paysInput"     readonly placeholder="—" style="background:#f9fafb;color:#374151;" /></td>
-      <td><input class="input bailleurInput" readonly placeholder="—" style="background:#f9fafb;color:#374151;" /></td>
-      <td><input class="input projectInput"  readonly placeholder="—" style="background:#f9fafb;color:#374151;" /></td>
       <td class="right"><input class="input rateInput"      type="number" step="any" min="0" placeholder="0" /></td>
       <td class="right"><input class="input rateEurInput"   readonly placeholder="—" style="background:#f9fafb;color:#374151;text-align:right;" /></td>
       <td class="right"><input class="input totalEurInput"  readonly placeholder="—" style="background:#eef2ff;color:#1f2a5a;text-align:right;font-weight:700;" /></td>
@@ -637,11 +595,7 @@ define(
       <td><input class="input commentInput"  type="text" placeholder="Commentaire…" /></td>
       <td class="right"><button type="button" class="btn danger removeBtn">✕</button></td>\`;
 
-    attachCombobox(tr.querySelector('.classInput'), tr.querySelector('.classId'), null, CLASSES, (cls) => {
-      tr.querySelector('.paysInput').value     = cls ? (cls.pays     || '') : '';
-      tr.querySelector('.bailleurInput').value = cls ? (cls.bailleur || '') : '';
-      tr.querySelector('.projectInput').value  = cls ? (cls.project  || '') : '';
-    });
+    attachCombobox(tr.querySelector('.classInput'), tr.querySelector('.classId'), null, CLASSES);
     attachCombobox(tr.querySelector('.deptInput'),   tr.querySelector('.deptId'),  tr.querySelector('.deptList'),  DEPTS);
     tr.querySelector('.rateInput').addEventListener('input', () => recomputeLine(tr));
     tr.querySelector('.qtyInput').addEventListener('input',  () => recomputeLine(tr));
