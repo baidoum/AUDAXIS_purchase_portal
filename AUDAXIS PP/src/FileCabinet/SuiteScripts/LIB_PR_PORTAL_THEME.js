@@ -3,58 +3,52 @@
  * @NApiVersion 2.1
  * @NModuleScope SameAccount
  *
- * Brand theme for La Chaîne de l'Espoir purchase portal.
- * Amber #F5A823 / Teal #3BBFCE color scheme.
+ * Brand theme — Audaxis Purchase Portal.
+ * Primary #2ea3f2 / Teal #29c4a9 / Navy #004a59
  */
 define([], () => {
 
-  // ── Inline SVG sun logo ───────────────────────────────────────────────────
-  const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60" width="48" height="48" aria-hidden="true">
-  <circle cx="30" cy="30" r="12" fill="#F5A823"/>
-  <g stroke="#F5A823" stroke-width="3.5" stroke-linecap="round">
-    <line x1="30" y1="4"  x2="30" y2="12"/>
-    <line x1="30" y1="48" x2="30" y2="56"/>
-    <line x1="4"  y1="30" x2="12" y2="30"/>
-    <line x1="48" y1="30" x2="56" y2="30"/>
-    <line x1="11.5" y1="11.5" x2="17.3" y2="17.3"/>
-    <line x1="42.7" y1="42.7" x2="48.5" y2="48.5"/>
-    <line x1="48.5" y1="11.5" x2="42.7" y2="17.3"/>
-    <line x1="17.3" y1="42.7" x2="11.5" y2="48.5"/>
-  </g>
-</svg>`;
+  // ── Audaxis logo (inline SVG wordmark) ────────────────────────────────────
+  const LOGO_SVG = `<img src="https://www.audaxis.com/wp-content/uploads/2025/08/Audaxis-300pix.png"
+    alt="Audaxis" height="36" style="display:block;height:36px;width:auto;" />`;
 
   // ── Shared brand CSS ──────────────────────────────────────────────────────
   const CSS = `
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&family=Poppins:wght@600;700;800&display=swap');
     :root{
-      --amber:#F5A823; --amber-dark:#d4891a; --amber-light:#FEF3D7;
-      --teal:#3BBFCE;  --teal-dark:#2da3b1;  --teal-light:#E6F8FA;
-      --bg:#F4F5F7; --card:#ffffff;
-      --text:#1A1A2E; --muted:#6b7280;
-      --line:#E5E7EB; --shadow:0 4px 24px rgba(0,0,0,.08);
+      --primary:#2ea3f2;   --primary-dark:#1a8fd4;  --primary-light:#e8f5fe;
+      --teal:#29c4a9;      --teal-dark:#1fa88e;     --teal-light:#e6f9f5;
+      --navy:#004a59;
+      --bg:#f3f3f3; --card:#ffffff;
+      --text:#2d3940; --muted:#6b7280;
+      --line:#e5e5e5; --shadow:0 4px 24px rgba(0,0,0,.08);
       --radius:14px; --radius-sm:8px;
       --danger:#b91c1c; --danger-bg:#fff5f5; --danger-border:#fecaca;
       --success:#166534; --success-bg:#f0fdf4; --success-border:#bbf7d0;
+
+      /* Legacy aliases so existing HTML using --amber/--teal still works */
+      --amber:var(--primary); --amber-dark:var(--primary-dark); --amber-light:var(--primary-light);
     }
     *{ box-sizing:border-box; margin:0; padding:0; }
     body{
-      font-family:'Inter',system-ui,-apple-system,Segoe UI,Arial,sans-serif;
+      font-family:'Open Sans',Arial,sans-serif;
       background:var(--bg); color:var(--text); min-height:100vh;
     }
 
     /* ── Brand header ── */
     .brand-header{
-      background:#fff; border-bottom:3px solid var(--amber);
-      padding:14px 24px; display:flex; align-items:center; gap:14px;
+      background:var(--navy); border-bottom:3px solid var(--primary);
+      padding:12px 24px; display:flex; align-items:center; gap:16px;
     }
     .brand-header .brand-name{
-      font-size:17px; font-weight:800; color:var(--text); line-height:1.1;
+      font-family:'Poppins',sans-serif;
+      font-size:17px; font-weight:700; color:#ffffff; line-height:1.1;
     }
     .brand-header .brand-sub{
-      font-size:12px; color:var(--muted); font-weight:600; letter-spacing:.03em;
+      font-size:12px; color:rgba(255,255,255,.65); font-weight:600; letter-spacing:.03em;
     }
     .brand-header .brand-divider{
-      width:3px; height:32px; background:var(--amber); border-radius:2px; margin:0 4px;
+      width:2px; height:32px; background:rgba(255,255,255,.25); border-radius:2px; margin:0 4px;
     }
 
     /* ── Layout ── */
@@ -73,7 +67,7 @@ define([], () => {
       color:var(--muted); border:1px solid transparent; font-weight:700; font-size:13px;
     }
     .nav a:hover{ background:#f9fafb; border-color:var(--line); color:var(--text); }
-    .nav a.active{ background:var(--amber); border-color:var(--amber); color:#fff; }
+    .nav a.active{ background:var(--primary); border-color:var(--primary); color:#fff; }
     .nav-logout-form{ display:inline; }
     .nav-logout{
       display:inline-flex; align-items:center; padding:7px 12px;
@@ -85,7 +79,7 @@ define([], () => {
 
     /* ── Page head ── */
     .page-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:16px; }
-    .page-title{ font-size:22px; font-weight:800; }
+    .page-title{ font-family:'Poppins',sans-serif; font-size:22px; font-weight:700; color:var(--navy); }
     .page-sub{ color:var(--muted); font-size:13px; margin-top:4px; max-width:700px; }
 
     /* ── Divider / spacer ── */
@@ -104,7 +98,7 @@ define([], () => {
       border-radius:var(--radius-sm); background:#fff; font-size:14px;
       font-family:inherit; outline:none; transition:border-color .15s, box-shadow .15s;
     }
-    .input:focus{ border-color:var(--teal); box-shadow:0 0 0 3px rgba(59,191,206,.18); }
+    .input:focus{ border-color:var(--primary); box-shadow:0 0 0 3px rgba(46,163,242,.18); }
 
     /* ── Buttons ── */
     .btn{
@@ -114,8 +108,8 @@ define([], () => {
       transition:background .12s, border-color .12s;
     }
     .btn:hover{ background:#f3f4f6; border-color:#d1d5db; }
-    .btn.primary{ background:var(--amber); border-color:var(--amber); color:#fff; }
-    .btn.primary:hover{ background:var(--amber-dark); border-color:var(--amber-dark); }
+    .btn.primary{ background:var(--primary); border-color:var(--primary); color:#fff; }
+    .btn.primary:hover{ background:var(--primary-dark); border-color:var(--primary-dark); }
     .btn.secondary{ background:var(--teal); border-color:var(--teal); color:#fff; }
     .btn.secondary:hover{ background:var(--teal-dark); border-color:var(--teal-dark); }
     .btn.danger{ color:var(--danger); border-color:var(--danger-border); background:var(--danger-bg); }
@@ -133,8 +127,8 @@ define([], () => {
     .alert{ border-radius:var(--radius-sm); padding:10px 14px; font-weight:600; font-size:14px; margin-bottom:14px; }
     .alert.error{ border:1.5px solid var(--danger-border); background:var(--danger-bg); color:#7f1d1d; }
     .alert.success{ border:1.5px solid var(--success-border); background:var(--success-bg); color:var(--success); }
-    .alert.info{ border:1.5px solid #c7d2fe; background:#eef2ff; color:#1f2a5a; }
-    .notice{ border:1.5px solid #c7d2fe; background:#eef2ff; color:#1f2a5a; border-radius:var(--radius-sm); padding:10px 12px; font-weight:700; font-size:14px; margin-bottom:12px; display:none; }
+    .alert.info{ border:1.5px solid #bde3fa; background:var(--primary-light); color:var(--navy); }
+    .notice{ border:1.5px solid #bde3fa; background:var(--primary-light); color:var(--navy); border-radius:var(--radius-sm); padding:10px 12px; font-weight:700; font-size:14px; margin-bottom:12px; display:none; }
     .error-box{ border:1.5px solid var(--danger-border); background:var(--danger-bg); color:#7f1d1d; border-radius:var(--radius-sm); padding:10px 12px; font-weight:700; font-size:14px; margin-bottom:12px; display:none; }
 
     /* ── Typeahead ── */
@@ -146,28 +140,33 @@ define([], () => {
     }
     .ta-item{ padding:10px 13px; cursor:pointer; border-bottom:1px solid var(--line); font-weight:600; font-size:13px; }
     .ta-item:last-child{ border-bottom:none; }
-    .ta-item:hover{ background:var(--amber-light); color:var(--text); }
+    .ta-item:hover{ background:var(--primary-light); color:var(--navy); }
 
     /* ── Table ── */
     .tableWrap{ overflow:auto; border:1.5px solid var(--line); border-radius:var(--radius-sm); }
     table{ width:100%; border-collapse:collapse; min-width:1800px; }
     th,td{ padding:10px 12px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
-    th{ background:#f9fafb; font-size:11px; color:#374151; text-transform:uppercase; letter-spacing:.06em; font-weight:800; }
-    th .th-en{ font-size:9px; color:var(--muted); font-weight:600; text-transform:none; letter-spacing:.01em; margin-top:2px; font-style:italic; }
+    th{ background:var(--navy); color:#ffffff; font-size:11px; text-transform:uppercase; letter-spacing:.06em; font-weight:700; }
+    th .th-en{ font-size:9px; color:rgba(255,255,255,.6); font-weight:600; text-transform:none; letter-spacing:.01em; margin-top:2px; font-style:italic; }
     td .input{ padding:8px 10px; }
     .right{ text-align:right; }
     .muted{ color:var(--muted); font-size:13px; }
     .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between; }
 
     /* ── Login / setpw card centering ── */
-    .auth-wrap{ min-height:100vh; display:flex; flex-direction:column; }
+    .auth-wrap{ min-height:100vh; display:flex; flex-direction:column; background:var(--navy); }
     .auth-body{ flex:1; display:flex; align-items:center; justify-content:center; padding:24px 16px; }
     .auth-card{ background:#fff; border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); padding:36px 32px; width:100%; max-width:440px; }
     .auth-logo{ display:flex; align-items:center; gap:12px; margin-bottom:28px; }
-    .auth-title{ font-size:19px; font-weight:800; margin-bottom:6px; }
+    .auth-title{ font-family:'Poppins',sans-serif; font-size:19px; font-weight:700; color:var(--navy); margin-bottom:6px; }
     .auth-sub{ font-size:13px; color:var(--muted); margin-bottom:24px; }
     label{ display:block; font-size:12px; font-weight:700; color:#374151; letter-spacing:.04em; text-transform:uppercase; margin-bottom:5px; }
     .form-group{ margin-bottom:16px; }
+
+    /* ── Tiles (home dashboard) ── */
+    .tile{ border-left:4px solid var(--primary); }
+    .tile:hover{ border-left-color:var(--primary-dark); }
+    .tile-active{ border-left-color:var(--teal); }
 
     @media (max-width:860px){
       .grid{ grid-template-columns:1fr; }
@@ -181,11 +180,11 @@ define([], () => {
   // ── Page helpers ──────────────────────────────────────────────────────────
   function pageHead(title) {
     return `<!doctype html>
-<html lang="fr">
+<html lang="en">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>${title} — Portail Achats</title>
+  <title>${title} — Audaxis Purchase Portal</title>
   <style>${CSS}</style>
 </head>`;
   }
@@ -198,7 +197,7 @@ define([], () => {
   ${LOGO_SVG}
   <div class="brand-divider"></div>
   <div>
-    <div class="brand-name">La Chaîne de l'Espoir</div>
+    <div class="brand-name">Purchase Portal</div>
     ${sub}
   </div>
 </header>`;
