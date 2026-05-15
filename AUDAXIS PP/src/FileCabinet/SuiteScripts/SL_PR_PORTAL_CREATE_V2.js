@@ -23,13 +23,11 @@ define(
     getCurrentPortalUser  // FIX #4 + #9: active-user check included
   } = lib;
 
-  // ============================================================
-  // SCRIPT IDs  — update these to match your deployment
-  // ============================================================
-  const THIS_SUITELET_SCRIPTID = 'customscript_sl_pr_portal_create_v2';
-  const THIS_SUITELET_DEPLOYID = 'customdeploy_sl_pr_portal_create_v2';
-  const AUTH_SUITELET_SCRIPTID = 'customscript_sl_pr_portal_auth';
-  const AUTH_SUITELET_DEPLOYID = 'customdeploy_sl_pr_portal_auth';
+  // Initialized inside onRequest — N/runtime is unavailable during define callback.
+  let THIS_SUITELET_SCRIPTID = '';
+  let THIS_SUITELET_DEPLOYID = '';
+  let AUTH_SUITELET_SCRIPTID = '';
+  let AUTH_SUITELET_DEPLOYID = '';
 
   // Initialized inside onRequest — N/runtime is unavailable during define callback.
   let PORTAL_VENDOR_ID       = '';
@@ -715,10 +713,14 @@ define(
   // ENTRYPOINT
   // ============================================================
   function onRequest(context) {
-    PORTAL_VENDOR_ID       = String(getParam('custscript_pr_portal_vendor_id',  ''));
-    PORTAL_GENERIC_ITEM_ID = String(getParam('custscript_pr_portal_item_id',    ''));
-    PORTAL_PO_FORM_ID      = String(getParam('custscript_pr_portal_po_form',    ''));
-    PORTAL_CURRENCY_ID     = String(getParam('custscript_pr_portal_currency_id','1'));
+    THIS_SUITELET_SCRIPTID = String(getParam('custscript_pr_create_self_scriptid', 'customscript_sl_pr_portal_create_v2'));
+    THIS_SUITELET_DEPLOYID = String(getParam('custscript_pr_create_self_deployid', ''));
+    AUTH_SUITELET_SCRIPTID = String(getParam('custscript_pr_create_auth_scriptid', 'customscript_sl_pr_portal_auth'));
+    AUTH_SUITELET_DEPLOYID = String(getParam('custscript_pr_create_auth_deployid', ''));
+    PORTAL_VENDOR_ID       = String(getParam('custscript_pr_portal_vendor_id',     ''));
+    PORTAL_GENERIC_ITEM_ID = String(getParam('custscript_pr_portal_item_id',       ''));
+    PORTAL_PO_FORM_ID      = String(getParam('custscript_pr_portal_po_form',       ''));
+    PORTAL_CURRENCY_ID     = String(getParam('custscript_pr_portal_currency_id',   '1'));
 
     const req   = context.request;
     const res   = context.response;
