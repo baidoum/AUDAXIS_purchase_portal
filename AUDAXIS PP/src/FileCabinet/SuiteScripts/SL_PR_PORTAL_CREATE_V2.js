@@ -31,10 +31,11 @@ define(
   const AUTH_SUITELET_SCRIPTID = 'customscript_sl_pr_portal_auth';
   const AUTH_SUITELET_DEPLOYID = 'customdeploy_sl_pr_portal_auth';
 
-  const PORTAL_VENDOR_ID       = String(getParam('custscript_pr_portal_vendor_id',  ''));
-  const PORTAL_GENERIC_ITEM_ID = String(getParam('custscript_pr_portal_item_id',    ''));
-  const PORTAL_PO_FORM_ID      = String(getParam('custscript_pr_portal_po_form',    ''));
-  const PORTAL_CURRENCY_ID     = String(getParam('custscript_pr_portal_currency_id','1'));
+  // Initialized inside onRequest — N/runtime is unavailable during define callback.
+  let PORTAL_VENDOR_ID       = '';
+  let PORTAL_GENERIC_ITEM_ID = '';
+  let PORTAL_PO_FORM_ID      = '';
+  let PORTAL_CURRENCY_ID     = '1';
 
   // ============================================================
   // URL HELPERS
@@ -760,6 +761,11 @@ define(
   // ENTRYPOINT
   // ============================================================
   function onRequest(context) {
+    PORTAL_VENDOR_ID       = String(getParam('custscript_pr_portal_vendor_id',  ''));
+    PORTAL_GENERIC_ITEM_ID = String(getParam('custscript_pr_portal_item_id',    ''));
+    PORTAL_PO_FORM_ID      = String(getParam('custscript_pr_portal_po_form',    ''));
+    PORTAL_CURRENCY_ID     = String(getParam('custscript_pr_portal_currency_id','1'));
+
     const req   = context.request;
     const res   = context.response;
     const route = String(req.parameters.route || 'create').toLowerCase();
