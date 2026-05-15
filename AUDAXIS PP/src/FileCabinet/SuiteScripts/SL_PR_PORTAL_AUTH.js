@@ -525,83 +525,29 @@ define(
   }
 
   // Build the "my pending approvals" filter block — matches POs where the given
-  // employee is the approver at step N, all steps 1..N-1 are approved, and step
-  // N is not yet approved. Uses one OR branch per step (1..6).
-  function buildPendingApprovalsFilter(employeeId) {
-    const branches = [];
-    for (let n = 1; n <= 6; n++) {
-      const branch = [
-        ['custbody_cde_dda_app' + n, 'anyof', employeeId],
-        'AND',
-        ['custbody_cde_dda_approved' + n, 'is', 'F']
-      ];
-      for (let j = 1; j < n; j++) {
-        branch.push('AND');
-        branch.push(['custbody_cde_dda_approved' + j, 'is', 'T']);
-      }
-      branches.push(branch);
-      if (n < 6) branches.push('OR');
-    }
-    return branches;
-  }
-
   function getPendingApprovalsForEmployee(employeeId) {
     try {
-      log.audit('getPendingApprovalsForEmployee', 'employeeId=' + employeeId);
-      const filters = [
-        ['mainline', 'is', 'T'],
-        'AND',
-        ['custbody_cde_dda_status', 'noneof', '2'],
-        'AND',
-        buildPendingApprovalsFilter(employeeId)
-      ];
-      log.audit('getPendingApprovalsForEmployee filters', JSON.stringify(filters));
-
       const s = search.create({
         type: search.Type.PURCHASE_ORDER,
-        filters: filters,
+        filters: [
+          ['mainline',        'is',    'T'],
+          'AND',
+          ['approvalstatus',  'anyof', '1'],
+          'AND',
+          ['nextapprover',    'anyof', employeeId]
+        ],
         columns: [
           search.createColumn({ name: 'trandate', sort: search.Sort.DESC }),
-          'tranid', 'entity', 'memo', 'total', 'currency',
+          'tranid', 'memo', 'total',
           search.createColumn({ name: 'symbol', join: 'currency' }),
-          'custbody_cde_dda_app1', 'custbody_cde_dda_app2', 'custbody_cde_dda_app3',
-          'custbody_cde_dda_app4', 'custbody_cde_dda_app5', 'custbody_cde_dda_app6',
-          'custbody_cde_dda_approved1', 'custbody_cde_dda_approved2', 'custbody_cde_dda_approved3',
-          'custbody_cde_dda_approved4', 'custbody_cde_dda_approved5', 'custbody_cde_dda_approved6'
+          'employee'
         ]
       });
-
       const rows = s.run().getRange({ start: 0, end: 200 }) || [];
-      log.audit('getPendingApprovalsForEmployee', 'rows found=' + rows.length);
-      rows.forEach(r => {
-        log.audit('row ' + r.id, JSON.stringify({
-          tranid:     r.getValue({ name: 'tranid' }),
-          app1:       r.getValue({ name: 'custbody_cde_dda_app1' }),
-          approved1:  r.getValue({ name: 'custbody_cde_dda_approved1' }),
-          app2:       r.getValue({ name: 'custbody_cde_dda_app2' }),
-          approved2:  r.getValue({ name: 'custbody_cde_dda_approved2' })
-        }));
-      });
       return rows.map(r => {
-        // Find current step for this employee: smallest N where approverN = me,
-        // approvedN = F, and approved1..N-1 all = T.
-        let step = 0;
-        for (let n = 1; n <= 6; n++) {
-          const approver = String(r.getValue({ name: 'custbody_cde_dda_app' + n }) || '');
-          if (approver !== String(employeeId)) continue;
-          if (isApprovedFlag(r.getValue({ name: 'custbody_cde_dda_approved' + n }))) continue;
-          let allPrev = true;
-          for (let j = 1; j < n; j++) {
-            if (!isApprovedFlag(r.getValue({ name: 'custbody_cde_dda_approved' + j }))) {
-              allPrev = false; break;
-            }
-          }
-          if (allPrev) { step = n; break; }
-        }
         let requesterText = '';
         try {
-          const po = record.load({ type: record.Type.PURCHASE_ORDER, id: r.id, isDynamic: false });
-          const empId = po.getValue({ fieldId: 'employee' });
+          const empId = r.getValue({ name: 'employee' });
           if (empId) {
             const emp = record.load({ type: record.Type.EMPLOYEE, id: empId, isDynamic: false });
             const first = String(emp.getValue({ fieldId: 'firstname' }) || '').trim();
@@ -609,7 +555,6 @@ define(
             requesterText = (first + ' ' + last).trim() || String(emp.getValue({ fieldId: 'entityid' }) || '');
           }
         } catch (e) { /* leave blank */ }
-
         return {
           id:        String(r.id),
           tranid:    String(r.getValue({ name: 'tranid'   }) || ''),
@@ -617,11 +562,9 @@ define(
           requester: requesterText,
           memo:      String(r.getValue({ name: 'memo'     }) || ''),
           total:     parseFloat(r.getValue({ name: 'total' }) || '0') || 0,
-          currency:  String(r.getText ({ name: 'currency' }) || ''),
-          symbol:    String(r.getValue({ name: 'symbol', join: 'currency' }) || ''),
-          step:      step
+          symbol:    String(r.getValue({ name: 'symbol', join: 'currency' }) || '')
         };
-      }).filter(p => p.step > 0);
+      });
     } catch (e) {
       log.error('getPendingApprovalsForEmployee', e);
       return [];
@@ -656,7 +599,6 @@ define(
                  <th style="width:18%;">Demandeur<div class="th-en">Requester</div></th>
                  <th style="width:26%;">Commentaire<div class="th-en">Memo</div></th>
                  <th style="width:11%;" class="right">Montant<div class="th-en">Amount</div></th>
-                 <th style="width:9%;">Étape<div class="th-en">Step</div></th>
                  <th style="width:14%;" class="right">Action<div class="th-en">Action</div></th>
                </tr>
              </thead>
@@ -670,14 +612,12 @@ define(
                    <td>${escapeHtml(r.requester)}</td>
                    <td style="max-width:320px;">${escapeHtml(r.memo)}</td>
                    <td class="right" style="font-weight:700;">${escapeHtml(amountStr)}</td>
-                   <td><span class="pill" style="background:var(--teal-light);border-color:var(--teal);color:var(--teal-dark);">${r.step} / 6</span></td>
                    <td class="right" style="white-space:nowrap;">
                      <a href="${escapeHtml(viewUrl)}" class="btn" style="text-decoration:none;">Voir</a>
-                     <form method="POST" action="${escapeHtml(approveUrl)}" style="display:inline;" onsubmit="return confirm('Approuver la demande ${escapeHtml(r.tranid || r.id)} ?');">
+                     <form method="POST" action="${escapeHtml(approveUrl)}" style="display:inline;" onsubmit="return confirm('Approve request ${escapeHtml(r.tranid || r.id)}?');">
                        <input type="hidden" name="route" value="approve" />
                        <input type="hidden" name="poid"  value="${escapeHtml(r.id)}" />
-                       <input type="hidden" name="step"  value="${r.step}" />
-                       <button type="submit" class="btn primary">Approuver</button>
+                       <button type="submit" class="btn primary">Approve</button>
                      </form>
                    </td>
                  </tr>`;
@@ -718,23 +658,13 @@ define(
     });
   }
 
-  function approvePurchaseOrder(poId, step, employeeId) {
+  function approvePurchaseOrder(poId, employeeId) {
     const po = record.load({ type: record.Type.PURCHASE_ORDER, id: poId, isDynamic: false });
-
-    const approverId = String(po.getValue({ fieldId: 'custbody_cde_dda_app' + step }) || '');
-    if (approverId !== String(employeeId)) {
-      throw new Error('Vous n\'êtes pas l\'approbateur pour cette étape.');
+    const nextApprover = String(po.getValue({ fieldId: 'nextapprover' }) || '');
+    if (nextApprover && nextApprover !== String(employeeId)) {
+      throw new Error('You are not the next approver for this purchase order.');
     }
-    if (isApprovedFlag(po.getValue({ fieldId: 'custbody_cde_dda_approved' + step }))) {
-      throw new Error('Cette étape est déjà approuvée.');
-    }
-    for (let j = 1; j < step; j++) {
-      if (!isApprovedFlag(po.getValue({ fieldId: 'custbody_cde_dda_approved' + j }))) {
-        throw new Error('Les étapes précédentes doivent être approuvées avant cette étape.');
-      }
-    }
-
-    po.setValue({ fieldId: 'custbody_cde_dda_approved' + step, value: true });
+    po.setValue({ fieldId: 'approvalstatus', value: '2' });
     return po.save({ enableSourcing: false, ignoreMandatoryFields: true });
   }
 
@@ -956,14 +886,15 @@ define(
       employeeId: String(po.getValue({ fieldId: 'employee' }) || '')
     };
 
-    // Approval steps
-    const steps = [];
-    for (let n = 1; n <= 6; n++) {
-      const approverId = String(po.getValue({ fieldId: 'custbody_cde_dda_app' + n }) || '');
-      const approverText = tv('custbody_cde_dda_app' + n);
-      const approved = isApprovedFlag(po.getValue({ fieldId: 'custbody_cde_dda_approved' + n }));
-      steps.push({ step: n, approverId, approverText, approved, hasApprover: !!approverId });
-    }
+    // Approval status (standard NetSuite field)
+    const approvalStatusVal  = String(po.getValue({ fieldId: 'approvalstatus' }) || '');
+    const approvalStatusText = String(po.getText ({ fieldId: 'approvalstatus' }) || '');
+    const nextApproverText   = tv('nextapprover');
+    const steps = [{
+      approved:     approvalStatusVal === '2',
+      approverText: nextApproverText,
+      statusText:   approvalStatusVal === '2' ? '✓ Approved' : '⋯ Pending Approval'
+    }];
 
     // Budget & actual lookup: find the fiscal year matching the PO date, then
     // get { classId: total } for budgets (Custom106) and actual expenses
@@ -1050,14 +981,10 @@ define(
     const stepsHtml = data.steps.map(s => {
       const pillColor = s.approved
         ? 'background:var(--success-bg);border-color:var(--success-border);color:var(--success);'
-        : (s.hasApprover
-          ? 'background:#fef3c7;border-color:#fcd34d;color:#92400e;'
-          : 'background:#f3f4f6;border-color:#e5e7eb;color:var(--muted);');
-      const statusText = s.approved ? '✓ Approuvé' : (s.hasApprover ? '⋯ En attente' : '— Non requis');
+        : 'background:#fef3c7;border-color:#fcd34d;color:#92400e;';
       return `<tr>
-        <td style="width:8%;font-weight:800;">#${s.step}</td>
         <td>${escapeHtml(s.approverText || '—')}</td>
-        <td class="right"><span class="pill" style="${pillColor}">${statusText}</span></td>
+        <td class="right"><span class="pill" style="${pillColor}">${s.statusText}</span></td>
       </tr>`;
     }).join('');
 
@@ -1255,37 +1182,25 @@ define(
         filters: [
           ['mainline', 'is', 'T'],
           'AND',
-          ['custbody_cde_dem_appro', 'is', 'T'],
-          'AND',
           ['employee', 'anyof', employeeId]
         ],
         columns: [
           search.createColumn({ name: 'trandate', sort: search.Sort.DESC }),
           'tranid', 'memo', 'total', 'currency',
           search.createColumn({ name: 'symbol', join: 'currency' }),
-          'custbody_cde_dda_status',
-          'custbody_cde_dda_approved1', 'custbody_cde_dda_approved2', 'custbody_cde_dda_approved3',
-          'custbody_cde_dda_approved4', 'custbody_cde_dda_approved5', 'custbody_cde_dda_approved6'
+          'approvalstatus'
         ]
       });
       const rows = s.run().getRange({ start: 0, end: 200 }) || [];
-      return rows.map(r => {
-        let approvedCount = 0;
-        for (let n = 1; n <= 6; n++) {
-          if (isApprovedFlag(r.getValue({ name: 'custbody_cde_dda_approved' + n }))) approvedCount++;
-        }
-        const ddaStatus = String(r.getText({ name: 'custbody_cde_dda_status' }) || r.getValue({ name: 'custbody_cde_dda_status' }) || '');
-        return {
-          id:        String(r.id),
-          tranid:    String(r.getValue({ name: 'tranid'   }) || ''),
-          date:      String(r.getValue({ name: 'trandate' }) || ''),
-          memo:      String(r.getValue({ name: 'memo'     }) || ''),
-          total:     parseFloat(r.getValue({ name: 'total' }) || '0') || 0,
-          symbol:    String(r.getValue({ name: 'symbol', join: 'currency' }) || ''),
-          ddaStatus: ddaStatus,
-          approvedCount: approvedCount
-        };
-      });
+      return rows.map(r => ({
+        id:             String(r.id),
+        tranid:         String(r.getValue({ name: 'tranid'          }) || ''),
+        date:           String(r.getValue({ name: 'trandate'        }) || ''),
+        memo:           String(r.getValue({ name: 'memo'            }) || ''),
+        total:          parseFloat(r.getValue({ name: 'total'       }) || '0') || 0,
+        symbol:         String(r.getValue({ name: 'symbol', join: 'currency' }) || ''),
+        approvalStatus: String(r.getValue({ name: 'approvalstatus'  }) || '')
+      }));
     } catch (e) { log.error('getMyPurchaseOrders', e); return []; }
   }
 
@@ -1316,7 +1231,6 @@ define(
                  <th style="width:11%;">Date<div class="th-en">Date</div></th>
                  <th style="width:30%;">Commentaire<div class="th-en">Memo</div></th>
                  <th style="width:13%;" class="right">Montant<div class="th-en">Amount</div></th>
-                 <th style="width:11%;">Étape<div class="th-en">Step</div></th>
                  <th style="width:13%;">Statut<div class="th-en">Status</div></th>
                  <th style="width:9%;" class="right">Action<div class="th-en">Action</div></th>
                </tr>
@@ -1325,16 +1239,15 @@ define(
                ${rows.map(r => {
                  const amountStr = (r.total || 0).toFixed(2) + (r.symbol ? (' ' + r.symbol) : '');
                  const viewUrl = url.resolveScript({ scriptId: runtime.getCurrentScript().id, deploymentId: runtime.getCurrentScript().deploymentId, params: { route: 'mypos', action: 'view', poid: r.id }, returnExternalUrl: true });
-                 const isApproved = String(r.ddaStatus).toLowerCase().indexOf('approv') === 0 || String(r.ddaStatus) === '2';
+                 const isApproved = r.approvalStatus === '2';
                  const statusPill = isApproved
-                   ? '<span class="pill" style="background:var(--success-bg);border-color:var(--success-border);color:var(--success);">✓ Approuvée</span>'
-                   : '<span class="pill" style="background:#fef3c7;border-color:#fcd34d;color:#92400e;">⋯ En cours</span>';
+                   ? '<span class="pill" style="background:var(--success-bg);border-color:var(--success-border);color:var(--success);">✓ Approved</span>'
+                   : '<span class="pill" style="background:#fef3c7;border-color:#fcd34d;color:#92400e;">⋯ Pending Approval</span>';
                  return `<tr>
                    <td style="font-weight:700;"><a href="${escapeHtml(viewUrl)}" style="color:var(--teal-dark);text-decoration:none;border-bottom:1px dotted var(--teal);">${escapeHtml(r.tranid || ('#' + r.id))}</a></td>
                    <td>${escapeHtml(r.date)}</td>
                    <td style="max-width:340px;">${escapeHtml(r.memo)}</td>
                    <td class="right" style="font-weight:700;">${escapeHtml(amountStr)}</td>
-                   <td><span class="pill" style="background:var(--teal-light);border-color:var(--teal);color:var(--teal-dark);">${r.approvedCount} / 6</span></td>
                    <td>${statusPill}</td>
                    <td class="right"><a href="${escapeHtml(viewUrl)}" class="btn" style="text-decoration:none;">Voir</a></td>
                  </tr>`;
@@ -1413,15 +1326,14 @@ define(
 
     if (req.method === 'POST') {
       const poId = String(req.parameters.poid || req.parameters.poId || '').trim();
-      const step = parseInt(String(req.parameters.step || '0'), 10);
-      if (!poId || !(step >= 1 && step <= 6)) {
+      if (!poId) {
         const rows = getPendingApprovalsForEmployee(employeeId);
-        return renderApprovePage(res, rows, null, 'Paramètres invalides.');
+        return renderApprovePage(res, rows, null, 'Invalid parameters.');
       }
       try {
-        approvePurchaseOrder(poId, step, employeeId);
+        approvePurchaseOrder(poId, employeeId);
         const rows = getPendingApprovalsForEmployee(employeeId);
-        return renderApprovePage(res, rows, 'Demande approuvée avec succès.', null);
+        return renderApprovePage(res, rows, 'Request approved successfully.', null);
       } catch (e) {
         log.error('handleApprove POST', e);
         const rows = getPendingApprovalsForEmployee(employeeId);
